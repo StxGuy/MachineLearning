@@ -54,8 +54,55 @@ function kmeans(R)
     return R
 end        
 
+function Euclidean(x,y)
+    t = length(x)
+    return sum((x-y).^2)/t
+end
+
+function silhouette(R)
+    N,M = size(R)
+    NC = 3
+    s = zeros(N)
+    
+    # Find size of clusters
+    nC = zeros(NC)
+    for i in 1:N
+        p = trunc(Int,R[i,3])
+        nC[p] = nC[p] + 1
+    end
+    
+    # Scan other elements
+    for i in 1:N
+        t = zeros(NC)
+        p = trunc(Int,R[i,3])
+        a = 0
+        for j in 1:N
+            q = trunc(Int,R[j,3])
+            d = Euclidean(R[i,1:2],R[j,1:2])
+            if (p == q)
+                a = a + d/(nC[q]-1)
+            else
+                t[q] = t[q] + d/nC[q]
+            end
+        end        
+        b = minimum(t[1:NC .≠ p])
+        
+        # Silhouette itself
+        if (a < b)
+            s[i] = 1-a/b
+        elseif (a > b)
+            s[i] = b/a-1
+        else
+            s[i] = 0
+        end
+    end
+    
+    return s
+end
+                
 
 R = createdata(50)
 R = kmeans(R)
-scatter(R[:,1],R[:,2],10,R[:,3])
+#scatter(R[:,1],R[:,2],10,R[:,3])
+plot(silhouette(R),"o")
 show()
