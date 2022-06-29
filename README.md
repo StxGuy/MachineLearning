@@ -1,5 +1,5 @@
 # MachineLearning
-Repository for the codes in my upcoming book on Machine Learning
+The collection of Julia scripts for the book: C. R. da Cunha, "Machine Learning for the Physical Sciences: Fundamentals and Prototyping with Julia" (2023) CRC Press.
 
 
 
