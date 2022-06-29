@@ -9,9 +9,9 @@ The collection of Julia scripts for the book: C. R. da Cunha, "Machine Learning 
 ## Credits
         
     @book{daCunha2021,
-      title     = "Machine Learning for the Brave",
+      title     = "Machine Learning for the Physical Sciences: Fundamentals and Prototyping with Julia",
       author    = "da Cunha, Carlo R.",
-      year      = 2021,
+      year      = 2023,
       publisher = "CRC Press",
       address   = "Boca Raton, FL",
       url       = {https://github.com/StxGuy/MachineLearning}
@@ -19,5 +19,5 @@ The collection of Julia scripts for the book: C. R. da Cunha, "Machine Learning 
         
 ## License
 
-Copyright (c) 2021 - Carlo R. da Cunha. \
+Copyright (c) 2022 - Carlo R. da Cunha. \
 <carlo.requiao@gmail.com>
