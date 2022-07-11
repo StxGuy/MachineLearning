@@ -39,17 +39,21 @@ end
 function connect(i,j,C,H)
     n,m = size(C)
 
+    # Connect nodes
     C[i,j] = 1
     C[j,i] = 1
 
+    # Set history to zero
     H[i,j] = 0
     H[j,i] = 0
 
+    # Age edges
     for k in 1:n
         if (C[i,k] == 1)
             H[i,k] = H[i,k] + 1
             H[k,i] = H[k,i] + 1
 
+            # Remove old edges
             if (H[i,k] > 10)
                 C[i,k] = 0
                 C[k,i] = 0
@@ -75,6 +79,50 @@ function draw_net(w,C)
     end
 end
 
+# Neural gas
+function ggas(x_sp,Nr)
+    # Initial guess
+    w = zeros(2,Nr)
+    for i in 1:Nr
+        w[1,i] = rand()*2π
+        w[2,i] = 2*(rand()-0.5)
+    end
+
+    # Connection and history
+    C = zeros(Nr,Nr)
+    H = zeros(Nr,Nr)
+
+    β = 5
+    ηo = 1E-3
+
+    # VQ Loop
+    err = 1
+    cnt = 0
+    while(err > 0.01 && cnt < 1E6)
+        # Choose input vector randomly
+        chosen = rand(1:N)
+        x = x_sp[:,chosen]
+
+        # Sort
+        ki = sortperm(d(w,x))   # Indexes
+        k = (ki.-1)/(Nr-1)      # Weights
+
+        # Update topological neigborhood
+        for i in 1:Nr
+            if (C[ki[1],i] == 1 || ki[1] == i)
+                η = ηo*exp(-β*k[i])
+                w[:,i] = η*x + (1-η)*w[:,i]
+            end
+        end
+
+        C,H = connect(ki[1],ki[2],C,H)
+        err = qerr(w,x_sp)
+        println(cnt,",",err)
+        cnt = cnt + 1
+    end
+
+    return w,C
+end
 
 # Original data
 N = 100
@@ -82,47 +130,10 @@ x_sp = LinRange(0,2π,N)
 y_sp = sin.(x_sp)
 x_sp = hcat(x_sp,y_sp)'
 
-# Initial guess
-Nr = 20
-w = zeros(2,Nr)
-for i in 1:Nr
-    w[1,i] = rand()*2π
-    w[2,i] = 2*(rand()-0.5)
-end
+# Neural gas
+w,C = ggas(x_sp,20)
 
-C = zeros(Nr,Nr)
-H = zeros(Nr,Nr)
-
-β = 5
-ηo = 1E-3
-
-# LVQ Loop
-err = 1
-cnt = 0
-while(err > 0.01 && cnt < 1E6)
-    # Choose input vector randomly
-    chosen = rand(1:N)
-    x = x_sp[:,chosen]
-
-    # Sort
-    ki = sortperm(d(w,x))   # Indexes
-    k = (ki.-1)/(Nr-1)      # Weights
-
-    # Update topological neigborhood
-    for i in 1:Nr
-        if (C[ki[1],i] == 1 || ki[1] == i)
-            η = ηo*exp(-β*k[i])
-            w[:,i] = η*x + (1-η)*w[:,i]
-        end
-    end
-
-    global C,H = connect(ki[1],ki[2],C,H)
-
-    global err = qerr(w,x_sp)
-    println(cnt,",",err)
-    global cnt = cnt + 1
-end
-
+# Draw
 draw_net(w,C)
 plot(x_sp[1,:],x_sp[2,:])
 scatter(w[1,:],w[2,:])
