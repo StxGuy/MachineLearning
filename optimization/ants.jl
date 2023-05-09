@@ -20,6 +20,10 @@ mutable struct antColony
     τ               :: Matrix       # Pheromone trail level
     A               :: Matrix       # Adjacency matrix
     ants            :: Vector       # Ants
+    α               :: Float64      # Importance of pheromone
+    β               :: Float64      # Importante of heuristic
+    ρ               :: Float64      # Evaporation rate
+    Q               :: Float64      # Amount of pheromone
 end    
 
 # Colony constructor
@@ -33,7 +37,7 @@ function build_colony(A :: Matrix, target_node :: Int, number_of_ants :: Int)
         push!(ants,antAgent(rand(1:N)))
     end
     
-    return antColony(number_of_ants,target_node,τ,A,ants)
+    return antColony(number_of_ants,target_node,τ,A,ants,1.0,1.0,0.01,10.0)
 end
 
 # Standard roulette selection
@@ -70,12 +74,6 @@ end
 
 # Construct solutions phase
 function construct_solutions(colony :: antColony)
-    α = 1.5
-    β = 1.5
-    τo = 1.0
-    po = 0.1
-    ρ = 0.05
-    
     N, = size(colony.A)
     
     # Erase memory and start on a random location
@@ -96,20 +94,13 @@ function construct_solutions(colony :: antColony)
                 fitness = []
                 for j in neighbors
                     η = 1/colony.A[ant.node,j]          # Attractiveness
-                    p = (colony.τ[ant.node,j]^α)*(η^β)  
+                    p = (colony.τ[ant.node,j]^colony.α)*(η^colony.β)  
                     push!(fitness,p)
                 end
                 
                 # Move to new node stochastically
-                if (rand() ≤ po)
-                    k = neighbors[argmax(fitness)]
-                else
-                    k = neighbors[roulette_selection(fitness)]
-                end
+                k = neighbors[roulette_selection(fitness)]
                 setfield!(ant,:node,k)
-                
-                colony.τ[ant.node,k] = (1.0-ρ)*colony.τ[ant.node,k] + ρ*τo
-                setfield!(colony,:τ,colony.τ)
                 
                 # Add node to memory
                 memory = ant.memory ∪ k
@@ -123,10 +114,8 @@ end
 
 # Update pheromone levels
 function update_pheromone(colony :: antColony)
-    ρ = 0.01
-    Q = 10.0
-        
     N, = size(colony.A)
+    
     for ant in colony.ants
         for i in 1:(N-1)
             p_from = findfirst(ant.memory .== i)
@@ -134,7 +123,7 @@ function update_pheromone(colony :: antColony)
                 p_to = findfirst(ant.memory .== j)
                 if (isnothing(p_from) == false && isnothing(p_to) == false)
                     if (p_to - p_from == 1)
-                        Δ = Q/length(ant.memory)
+                        Δ = colony.Q/length(ant.memory)
                     else
                         Δ = 0.0
                     end                
@@ -142,7 +131,7 @@ function update_pheromone(colony :: antColony)
                     Δ = 0.0
                 end
                     
-                colony.τ[i,j] = (1.0-ρ)*colony.τ[i,j] + Δ
+                colony.τ[i,j] = (1.0-colony.ρ)*colony.τ[i,j] + Δ
                 setfield!(colony,:τ,colony.τ)
             end
         end
